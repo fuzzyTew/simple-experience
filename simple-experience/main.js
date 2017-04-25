@@ -2,6 +2,7 @@ document.body.onload = function() {
 
     util.msg('Loaded.');
 
-    network.testLogin();
+    gfx.testGL();
+    //net.testLogin();
 
 };

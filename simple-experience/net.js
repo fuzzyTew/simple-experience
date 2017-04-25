@@ -1,4 +1,4 @@
-var network = {
+var net = {
     testLogin: function() {
         var pusher = new Pusher('8999c2b708a9a3152cb7', {encrypted:true});
         //var pusherWorldChannel = pusher.subscribe('private-world');
@@ -10,12 +10,13 @@ var network = {
             });
             
         function onAuthenticated() {
-            auth0lock.getUserInfo(localStorage.getItem('accessToken'), function(error, info) {
+            auth0lock.getUserInfo(localStorage.getItem('accessToken'), function(error, profile) {
                 if (error) {
                     auth0lock.show({flashMessage:{type:'error',text:error}});
                     return;
                 }
-                util.msg(JSON.stringify(info));
+                util.msg('nickname: ' + profile.nickname);
+                util.msg('signatures (add key: prior): ' + JSON.stringify(profile.pusherSignatures));
             });
         }
         
