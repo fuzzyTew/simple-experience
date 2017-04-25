@@ -12,8 +12,11 @@ message('Loading ...')
 
 document.body.onload = function() {
 
+    var pusher = new Pusher('8999c2b708a9a3152cb7', {encrypted:true});
+    //var pusherWorldChannel = pusher.subscribe('private-world');
+
     var auth0lock = new Auth0Lock('yxH-gFdeeRbVBH1C7oYqnCIrzvmgUci0', 'fuzzytew.auth0.com', {
-            
+            auth:{params:{socket_id:'3',channel:'private-world'}}
         });
         
     function onAuthenticated() {
@@ -32,7 +35,7 @@ document.body.onload = function() {
         onAuthenticated();
     });
     
-    if (localStorage.getItem('authToken'))
+    if (localStorage.getItem('accessToken'))
         onAuthenticated();
     else
         auth0lock.show({flashMessage: {type: 'success',text: 'Simple Experience needs a way to identify you'}});
