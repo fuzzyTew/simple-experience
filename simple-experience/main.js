@@ -5,7 +5,7 @@ function message(msg) {
 }
 
 window.onerror = function(msg, url, line) {
-    message(url + ':' + line + ': ');
+    message(url + ':' + line + ': ' + msg);
 };
 message('Loading ...')
 
