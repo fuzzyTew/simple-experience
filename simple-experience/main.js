@@ -15,6 +15,30 @@ document.body.onload = function() {
 		gfx.scene.moved();
 	};
 
+
+	var lastRadY;
+	var speedY = 0;
+	var dragging = false;
+
+	input.startdrag2d = function() {
+		dragging = true;
+		lastRadY = radY;
+	};
+	input.stopdrag2d = function() {
+		dragging = false;
+	};
+	gfx.onframe = function(msDelta) {
+		if (dragging) {
+			speedY = (radY - lastRadY) / msDelta;
+			lastRadY = radY;
+		} else if (speedY) {
+			radY += speedY * msDelta;
+			m4.rotationY(radY, matY);
+			m4.multiply(matY, matDist, gfx.scene.camera);
+			gfx.scene.moved();
+		}
+	};
+
 	var obj1 = gfx.geom.Ellipsoid(gfx.scene, m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1])));
 	var obj2 = gfx.geom.Ellipsoid(gfx.scene, m4.translation([1.5,0,1.5]));
 
