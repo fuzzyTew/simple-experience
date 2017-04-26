@@ -74,14 +74,14 @@ var input = {};
         if (e.touches.length > 1)
             return;
 
-        up(e.touches[0].pageX, e.touches[0].pageY);
+        up(registerX, registerY);
     });
 
     window.addEventListener('touchcancel', function(e) {
         if (e.touches.length > 1)
             return;
 
-        up(e.touches[0].pageX, e.touches[0].pageY);
+        up(registerX, registerY);
     });
 
 

@@ -1,15 +1,3 @@
-function message(msg) {
-    var p = document.createElement('p');
-    p.appendChild(document.createTextNode(msg));
-    document.body.appendChild(p);
-}
-
-window.onerror = function(msg, url, line) {
-    message(url + ':' + line + ': ' + msg);
-};
-message('Loading ...')
-
-
 document.body.onload = function() {
     
     var m4 = twgl.m4;
