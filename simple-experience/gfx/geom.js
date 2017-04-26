@@ -15,6 +15,16 @@ void main() {
 }
 `;
 
+	var fsColor = `
+precision lowp float;
+
+uniform vec4 color;
+
+void main() {
+	gl_FragColor = color;
+}
+`;
+
 	
 	/****
 	The scene wraps a camera and connects it to a set of objects.
@@ -86,8 +96,32 @@ void main() {
 `;
 	
 	function _Circle(gl) {
-		gl.biRadianOutline = twgl.createBufferInfoFromArrays(gl, {radians:{numComponents:1,data:util.range(0.0,2*3.141592653589793238, 64)}});
+		var count = 64;
+
+		gl.biRadianOutline = twgl.createBufferInfoFromArrays(gl, {radians:{numComponents:1,data:util.range(0.0,2*3.141592653589793238, count)}});
 		gl.piCircleOutline = twgl.createProgramInfo(gl, [vsCircle, fsBlack], util.msg);
+
+		var aCosSinOutline = [];
+		var aCosSinStrip = [];
+		for (var i = 0; i < count; ++ i) {
+			var radian = i * 2 * Math.PI / count;
+			aCosSinOutline[i * 2] = Math.cos(radian);
+			aCosSinOutline[i * 2 + 1] = Math.sin(radian);
+		}
+		aCosSinStrip[0] = aCosSinOutline[0];
+		aCosSinStrip[1] = aCosSinOutline[1];
+		for (var i = 1; i < count; ++ i) {
+			if (i & 1) {
+				aCosSinStrip[i * 2] = aCosSinOutline[i + 1];
+				aCosSinStrip[i * 2 + 1] = aCosSinOutline[i + 2];
+			} else {
+				aCosSinStrip[i * 2] = aCosSinOutline[count * 2 - i];
+				aCosSinStrip[i * 2 + 1] = aCosSinOutline[count * 2 - i + 1];
+			}
+		}
+
+		gl.biCosSinOutline = twgl.createBufferInfoFromArrays(gl, {cossin:{numComponents:2,data:aCosSinOutline}});
+		gl.biCosSinStrip = twgl.createBufferInfoFromArrays(gl, {cossin:{numComponents:2,data:aCosSinStrip}});
 	}
 	geom.Circle = function(scene, world) {
 		var uniforms = {
@@ -167,22 +201,24 @@ void main() {
 ****/
 	var vsEllipsoidOutline = `
 uniform vec3 depth;
+uniform float offset;
 uniform vec3 u;
 uniform vec3 v;
 uniform mat4 world;
 uniform mat4 viewProjection;
 
-attribute float radians;
+attribute vec2 cossin;
 
 varying vec4 position;
 
 void main() {
-	position = world * vec4(depth + cos(radians) * u + sin(radians) * v, 1.);
+	position = world * vec4(depth + cossin.x * u + cossin.y * v, 1.);
 
-	gl_Position = viewProjection * position;
+	gl_Position = viewProjection * position + vec4(0,0,offset,0);
 }
 `;
 	function _Ellipsoid(gl) {
+		gl.piEllipsoidFlat = twgl.createProgramInfo(gl, [vsEllipsoidOutline, fsColor], util.msg);
 		gl.piEllipsoidOutline = twgl.createProgramInfo(gl, [vsEllipsoidOutline, fsBlack], util.msg);
 	}
 		
@@ -194,7 +230,9 @@ void main() {
 		var camPos = v3.create();
 		
 		var uniforms = {
+			color: [1,1,1,1],
 			depth: v3.create(),
+			offset: 0,
 			u: v3.create(),
 			v: v3.create(),
 			world: world,
@@ -220,7 +258,7 @@ void main() {
 			v3.mulScalar(camPos, d, uniforms.depth);
 			
 			v3.cross(uniforms.depth, uniforms.u, uniforms.v);
-			
+
 			v3.mulScalar(uniforms.depth, d, uniforms.depth);
 			
 			//console.log('|u| = ' + v3.length(uniforms.u) + ' |v| = ' + v3.length(uniforms.v) + ' |depth| = ' + v3.length(uniforms.depth));
@@ -228,11 +266,20 @@ void main() {
 		
 		var ellipsoid = {
 			_draw: function(gl) {
+
+				uniforms.offset = 0.0;
+				gl.useProgram(gl.piEllipsoidFlat.program);
+				twgl.setBuffersAndAttributes(gl, gl.piEllipsoidFlat, gl.biCosSinStrip);
+				twgl.setUniforms(gl.piEllipsoidFlat, uniforms);
+				twgl.drawBufferInfo(gl, gl.biCosSinStrip, gl.TRIANGLE_STRIP);
+
+				uniforms.offset = -1.0 / 1024;
 				gl.useProgram(gl.piEllipsoidOutline.program);
-				twgl.setBuffersAndAttributes(gl, gl.piEllipsoidOutline, gl.biRadianOutline);
+				twgl.setBuffersAndAttributes(gl, gl.piEllipsoidOutline, gl.biCosSinOutline);
 				twgl.setUniforms(gl.piEllipsoidOutline, uniforms);
-				twgl.drawBufferInfo(gl, gl.biRadianOutline, gl.LINE_LOOP);
+				twgl.drawBufferInfo(gl, gl.biCosSinOutline, gl.LINE_LOOP);
 			},
+			color: uniforms.color,
 			world: world,
 			changed: updateWorldView,
 			_sceneMoved: updateWorldView

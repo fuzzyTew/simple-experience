@@ -9,6 +9,9 @@ var gfx = {};
 	var v3 = twgl.v3;
 	var gl = twgl.getContext(document.createElement('canvas'));
 	gfxgeom._init(gl);
+
+	gl.clearColor(0.9, 0.9, 0.9, 1.0);
+	gl.enable(gl.DEPTH_TEST);
 	
 	var scene = gfxgeom.Scene(m4.create(), m4.create());
 	
@@ -26,7 +29,7 @@ var gfx = {};
 		twgl.resizeCanvasToDisplaySize(gfx.canvas);
 		gl.viewport(0, 0, gfx.canvas.width, gfx.canvas.height);
 
-		m4.perspective(Math.PI / 4, gfx.canvas.clientWidth / gfx.canvas.clientHeight, 0.0, 1024, gfx.scene.projection);
+		m4.perspective(Math.PI / 4, gfx.canvas.clientWidth / gfx.canvas.clientHeight, 0.5, 1024, gfx.scene.projection);
 		gfx.scene.changed();
 	};
 	
