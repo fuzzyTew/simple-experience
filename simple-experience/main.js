@@ -14,11 +14,16 @@ document.body.onload = function() {
 		m4.multiply(matY, matDist, gfx.scene.camera);
 		gfx.scene.moved();
 	};
+
+	var obj1 = gfx.geom.Ellipsoid(gfx.scene, m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1])));
+	var obj2 = gfx.geom.Ellipsoid(gfx.scene, m4.translation([1.5,0,1.5]));
+
+	input.ondrag2d(0,0);
 	
 	util.msg('Loaded.');
 
-	gfx.testGL();
-	input.ondrag2d(0,0);
+	gfx.start();
+	
 	//net.testLogin();
 
 };

@@ -22,6 +22,7 @@ void main() {
 	****/
 	geom.Scene = function(camera, projection)
 	{
+		var objects = new Set();
 		var movingObjects = new Set();
 		var turningObjects = new Set();
 		
@@ -46,10 +47,18 @@ void main() {
 				m4.inverse(this.camera, this.view);
 				m4.multiply(this.projection, this.view, this.viewProjection);
 			},
+			draw: function(gl) {
+				gl.clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT);
+
+				for (let object of objects)
+					object._draw(gl);
+			},
 			_notifyMoved: function(object) { movingObjects.add(object); },
 			_ignoreMoved: function(object) { movingObjects.delete(object); },
 			_notifyTurned: function(object) { turningObjects.add(object); },
-			_ignoreTurned: function(object) { turningObjects.delete(object); }
+			_ignoreTurned: function(object) { turningObjects.delete(object); },
+			_draw: function(object) { objects.add(object); },
+			_hide: function(object) { objects.delete(object); }
 		};
 	};
 	
@@ -88,16 +97,19 @@ void main() {
 			world: m4.identity(),
 			viewProjection: m4.identity(),
 		};
-		
-		return {
+
+		var circle = {
 			world: world,
-			draw: function(gl) {
+			_draw: function(gl) {
 				gl.useProgram(gl.piCircleOutline.program);
 				twgl.setBuffersAndAttributes(gl, gl.piCircleOutline, gl.biRadianOutline);
 				twgl.setUniforms(gl.piCircleOutline, uniforms);
 				twgl.drawBufferInfo(gl, gl.biRadianOutline, gl.LINE_LOOP);
 			}
 		};
+
+		scene._draw(circle);
+		return circle;
 	};
 	
 	
@@ -215,7 +227,7 @@ void main() {
 		}
 		
 		var ellipsoid = {
-			draw: function(gl) {
+			_draw: function(gl) {
 				gl.useProgram(gl.piEllipsoidOutline.program);
 				twgl.setBuffersAndAttributes(gl, gl.piEllipsoidOutline, gl.biRadianOutline);
 				twgl.setUniforms(gl.piEllipsoidOutline, uniforms);
@@ -228,6 +240,7 @@ void main() {
 		
 		ellipsoid.changed();
 		scene._notifyMoved(ellipsoid);
+		scene._draw(ellipsoid);
 		
 		return ellipsoid;
 	};
