@@ -34,12 +34,12 @@ void main() {
             viewProjection: m4.multiply(projection, view),
             turned: function() {
                 this.changed();
-                for (var object in turningObjects)
+                for (let object of turningObjects)
                     object._sceneTurned(this);
             },
             moved: function() {
                 this.changed();
-                for (var object in movingObjects)
+                for (let object of movingObjects)
                     object._sceneMoved(this);
             },
             changed: function() {
@@ -77,7 +77,7 @@ void main() {
 `;
     
     function _Circle(gl) {
-        gl.biRadianOutline = twgl.createBufferInfoFromArrays(gl, {radians:{numComponents:1,data:util.range(0.0,2*3.141592653589793238,32)}});
+        gl.biRadianOutline = twgl.createBufferInfoFromArrays(gl, {radians:{numComponents:1,data:util.range(0.0,2*3.141592653589793238, 64)}});
         gl.piCircleOutline = twgl.createProgramInfo(gl, [vsCircle, fsBlack], util.msg);
     }
     geom.Circle = function(scene, world) {
@@ -194,6 +194,7 @@ void main() {
             m4.inverse(worldViewInverse, worldViewInverse);
             
             m4.getTranslation(worldViewInverse, camPos);
+            //console.log(camPos);
             
             var d2 = 1 / v3.lengthSq(camPos);
             m4.getAxis(worldViewInverse, 1, uniforms.u);
@@ -203,11 +204,14 @@ void main() {
             v3.mulScalar(uniforms.u, Math.sqrt(1 - d2), uniforms.u);
             
             var d = Math.sqrt(d2);
+            //console.log('l = ' + (1/d) + ' d = ' + d + ' r = ' + Math.sqrt(1 - d2));
             v3.mulScalar(camPos, d, uniforms.depth);
             
             v3.cross(uniforms.depth, uniforms.u, uniforms.v);
             
             v3.mulScalar(uniforms.depth, d, uniforms.depth);
+            
+            //console.log('|u| = ' + v3.length(uniforms.u) + ' |v| = ' + v3.length(uniforms.v) + ' |depth| = ' + v3.length(uniforms.depth));
         }
         
         var ellipsoid = {

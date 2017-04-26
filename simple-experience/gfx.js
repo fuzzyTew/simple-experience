@@ -6,9 +6,7 @@ var gfx = {};
     var gl = twgl.getContext(document.createElement('canvas'));
     gfxgeom._init(gl);
     
-    var projection = m4.create();
-    var camera = m4.lookAt([0,0,-10],[0,0,0],[0,1,0]);
-    var scene = gfxgeom.Scene(camera, projection);
+    var scene = gfxgeom.Scene(m4.create(), m4.create());
     
     gl.canvas.style.position = 'absolute';
     gl.canvas.style.left = '0';
@@ -25,24 +23,28 @@ var gfx = {};
         twgl.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-        m4.perspective(Math.PI / 4, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.0, 1024, projection);
+        m4.perspective(Math.PI / 4, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.0, 1024, scene.projection);
         scene.changed();
         
-        if (stillRender) requestAnimationFrame(stillRender);
+        //gfx.render();
     };
     
     
-
+    gfx.canvas = gl.canvas;
+    
+    gfx.scene = scene;
     
     gfx.testGL = function() {
-        var obj = gfxgeom.Ellipsoid(scene, m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1])));
-        obj.changed();
+        m4.lookAt([0,0,10], [0,0,0], [0,1,0], scene.camera);
+        var obj1 = gfxgeom.Ellipsoid(scene, m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1])));
+        var obj2 = gfxgeom.Ellipsoid(scene, m4.translation([1.5,0,1.5]));
         function render(ms) {
-            obj.draw(gl);
-            //requestAnimationFrame(render);
+            obj1.draw(gl);
+            obj2.draw(gl);
+            requestAnimationFrame(render);
         }
         window.onresize();
         requestAnimationFrame(render);
-        stillRender = render;
+        //stillRender = render;
     };
 })();
