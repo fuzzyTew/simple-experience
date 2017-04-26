@@ -11,32 +11,26 @@ message('Loading ...')
 
 
 document.body.onload = function() {
-
-    var pusher = new Pusher('8999c2b708a9a3152cb7', {encrypted:true});
-    //var pusherWorldChannel = pusher.subscribe('private-world');
-
-    var auth0lock = new Auth0Lock('yxH-gFdeeRbVBH1C7oYqnCIrzvmgUci0', 'fuzzytew.auth0.com', {
-            auth:{params:{socket_id:'3',channel:'private-world'}}
-        });
-        
-    function onAuthenticated() {
-        auth0lock.getUserInfo(localStorage.getItem('accessToken'), function(error, info) {
-            if (error) {
-                auth0lock.show({flashMessage:{type:'error',text:error}});
-                return;
-            }
-            message(JSON.stringify(info));
-        });
-    }
     
-    auth0lock.on('authenticated', function(result) {
-        auth0lock.hide();
-        localStorage.setItem('accessToken', result.accessToken);
-        onAuthenticated();
-    });
+    var m4 = twgl.m4;
+    var radY = 0;
+    var distZ = 10;
+    var matY = m4.create();
+    var matDist = m4.create();
     
-    if (localStorage.getItem('accessToken'))
-        onAuthenticated();
-    else
-        auth0lock.show({flashMessage: {type: 'success',text: 'Simple Experience needs a way to identify you'}});
+    input.ondrag2d = function(dx, dy) {
+        distZ *= (128 + dy) / 128.0;
+        m4.translation([0,1,distZ], matDist);
+        radY += dx / 256.0;
+        m4.rotationY(radY, matY);
+        m4.multiply(matY, matDist, gfx.scene.camera);
+        gfx.scene.moved();
+    };
+    
+    util.msg('Loaded.');
+
+    gfx.testGL();
+    input.ondrag2d(0,0);
+    //net.testLogin();
+
 };
