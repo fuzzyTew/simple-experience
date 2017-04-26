@@ -4,8 +4,11 @@ var gfx = {};
     var m4 = twgl.m4;
     var v3 = twgl.v3;
     var gl = twgl.getContext(document.createElement('canvas'));
+    gfxgeom._init(gl);
     
     var projection = m4.create();
+    var camera = m4.lookAt([0,0,-10],[0,0,0],[0,1,0]);
+    var scene = gfxgeom.Scene(camera, projection);
     
     gl.canvas.style.position = 'absolute';
     gl.canvas.style.left = '0';
@@ -15,39 +18,31 @@ var gfx = {};
     
     document.body.style.margin = 0;
     document.body.appendChild(gl.canvas);
+
+    var stillRender;
     
     window.onresize = function() {
         twgl.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        m4.perspective(Math.PI / 4, gl.canvas.clientWidth / gl.canvas.clienHeight, 0.0, 1024, projection);
+
+        m4.perspective(Math.PI / 4, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.0, 1024, projection);
+        scene.changed();
+        
+        if (stillRender) requestAnimationFrame(stillRender);
     };
     
-    var vsCircle = `
-attribute float t;
+    
 
-const float pi = 3.14159265358979323846264338327950288;
-
-void main() {
-    gl_Position = vec4( vec2(cos(t * pi * 2.), sin(t * pi * 2.)) * 0.5, 1.0, 1.0 );
-}
-`;
-    var fsBlack = `
-void main() {
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-}
-`;
     
     gfx.testGL = function() {
-        var piCircle = twgl.createProgramInfo(gl, [vsCircle, fsBlack]);
-        var bi1d = twgl.createBufferInfoFromArrays(gl, {t:{numComponents:1,data:util.range(0.0,1.0,32)}});
-        
+        var obj = gfxgeom.Ellipsoid(scene, m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1])));
+        obj.changed();
         function render(ms) {
-            gl.useProgram(piCircle.program);
-            twgl.setBuffersAndAttributes(gl, piCircle, bi1d);
-            twgl.drawBufferInfo(gl, bi1d, gl.LINE_LOOP);
+            obj.draw(gl);
             //requestAnimationFrame(render);
         }
         window.onresize();
         requestAnimationFrame(render);
+        stillRender = render;
     };
 })();
