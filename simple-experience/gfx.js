@@ -13,7 +13,7 @@ var gfx = {};
 	gl.clearColor(0.9, 0.9, 0.9, 1.0);
 	gl.enable(gl.DEPTH_TEST);
 	
-	var scene = gfxgeom.Scene(m4.create(), m4.create());
+	var scene = gfxgeom.Scene(gl, m4.create(), m4.create());
 	
 	gl.canvas.style.position = 'absolute';
 	gl.canvas.style.left = '0';

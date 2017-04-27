@@ -31,9 +31,10 @@ void main() {
 	The scene wraps a camera and connects it to a set of objects.
 	It will notify the objects to update their rendering data when informed that the camera has moved.
 	****/
-	geom.Scene = function(camera, projection)
+	geom.Scene = function(gl, camera, projection)
 	{
 		var objects = new Set();
+		var draws = [];
 		var movingObjects = new Set();
 		var turningObjects = new Set();
 		
@@ -62,14 +63,19 @@ void main() {
 				gl.clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT);
 
 				for (let object of objects)
-					object._draw(gl);
+					object._update();
+                
+                twgl.drawObjectList(gl, draws);
 			},
 			_notifyMoved: function(object) { movingObjects.add(object); },
 			_ignoreMoved: function(object) { movingObjects.delete(object); },
 			_notifyTurned: function(object) { turningObjects.add(object); },
 			_ignoreTurned: function(object) { turningObjects.delete(object); },
-			_draw: function(object) { objects.add(object); },
-			_hide: function(object) { objects.delete(object); }
+			_draw: function(object) {
+                objects.add(object);
+                for (let draw of object._getDraws(gl))
+                    draws.push(draw);
+            }
 		};
 	};
 	
@@ -129,17 +135,20 @@ void main() {
 			depth: [0,0,1],
 			u: [0.5,0,0],
 			v: [0,0.5,0],
-			world: m4.identity(),
+			world: world,
 			viewProjection: m4.identity(),
 		};
 
 		var circle = {
 			world: world,
-			_draw: function(gl) {
-				gl.useProgram(gl.piCircleOutline.program);
-				twgl.setBuffersAndAttributes(gl, gl.piCircleOutline, gl.biRadianOutline);
-				twgl.setUniforms(gl.piCircleOutline, uniforms);
-				twgl.drawBufferInfo(gl, gl.biRadianOutline, gl.LINE_LOOP);
+			_update: function(){ },
+			_getDraws: function(gl) {
+				return [{
+				    programInfo: gl.piCircleOutline,
+				    bufferInfo: gl.biRadianOutline,
+				    uniforms: uniforms,
+				    type: gl.LINE_LOOP
+				}];
 			}
 		};
 
@@ -232,7 +241,6 @@ void main() {
 		var uniforms = {
 			color: [1,1,1,1],
 			depth: v3.create(),
-			offset: 0,
 			u: v3.create(),
 			v: v3.create(),
 			worldViewProjection: m4.create()
@@ -265,20 +273,21 @@ void main() {
 		}
 		
 		var ellipsoid = {
-			_draw: function(gl) {
-                m4.multiply(scene.viewProjection, this.world, uniforms.worldViewProjection);
-
-				uniforms.offset = 0.0;
-				gl.useProgram(gl.piEllipsoidFlat.program);
-				twgl.setBuffersAndAttributes(gl, gl.piEllipsoidFlat, gl.biCosSinStrip);
-				twgl.setUniforms(gl.piEllipsoidFlat, uniforms);
-				twgl.drawBufferInfo(gl, gl.biCosSinStrip, gl.TRIANGLE_STRIP);
-
-				uniforms.offset = -1.0 / 1024;
-				gl.useProgram(gl.piEllipsoidOutline.program);
-				twgl.setBuffersAndAttributes(gl, gl.piEllipsoidOutline, gl.biCosSinOutline);
-				twgl.setUniforms(gl.piEllipsoidOutline, uniforms);
-				twgl.drawBufferInfo(gl, gl.biCosSinOutline, gl.LINE_LOOP);
+            _update: function() {
+                m4.multiply(scene.viewProjection, this.world, uniforms.worldViewProjection);                
+            },
+			_getDraws: function(gl) {
+                return [{
+                    uniforms: [uniforms, {offset: 0.0}],
+                    programInfo: gl.piEllipsoidFlat,
+                    bufferInfo: gl.biCosSinStrip,
+                    type: gl.TRIANGLE_STRIP
+                }, {
+                    uniforms: [uniforms, {offset: -1.0 / 1024}],
+                    programInfo: gl.piEllipsoidOutline,
+                    bufferInfo: gl.biCosSinOutline,
+                    type: gl.LINE_LOOP
+                }];
 			},
 			color: uniforms.color,
 			world: world,
@@ -313,13 +322,16 @@ void main() {
         };
         
         var disc = {
-            _draw: function(gl) {
+            _update: function() {
                 m4.multiply(scene.viewProjection, this.world, uniforms.worldViewProjection);
-                
-                gl.useProgram(gl.piDisc.program);
-                twgl.setBuffersAndAttributes(gl, gl.piDisc, gl.biCosSinStrip);
-                twgl.setUniforms(gl.piDisc, uniforms);
-                twgl.drawBufferInfo(gl, gl.biCosSinStrip, gl.TRIANGLE_STRIP);
+            },
+            _getDraws: function(gl) {
+                return [{
+                    programInfo: gl.piDisc,
+                    bufferInfo: gl.biCosSinStrip,
+                    uniforms: uniforms,
+                    type: gl.TRIANGLE_STRIP
+                }];
             },
             world: world,
             color: uniforms.color,
