@@ -30,8 +30,10 @@ var util = {
 	}
 };
 
-window.onerror = function(msg, url, line) {
+window.onerror = function(msg, url, line, col, err) {
 	util.msg(url + ':' + line + ': ' + msg);
+	if (err)
+	   util.msg(err.stack);
 };
 
 util.msg('Loading ...');

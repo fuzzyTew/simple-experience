@@ -8,7 +8,7 @@ document.body.onload = function() {
 	
 	input.ondrag2d = function(dx, dy) {
 		distZ *= (128 + dy) / 128.0;
-		m4.translation([0,1,distZ], matDist);
+		m4.translation([0,1.5,distZ], matDist);
 		radY += dx / 256.0;
 		m4.rotationY(radY, matY);
 		m4.multiply(matY, matDist, gfx.scene.camera);
@@ -39,8 +39,12 @@ document.body.onload = function() {
 		}
 	};
 
-	var obj1 = gfx.geom.Ellipsoid(gfx.scene, m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1])));
-	var obj2 = gfx.geom.Ellipsoid(gfx.scene, m4.translation([1.5,0,1.5]));
+	var obj1 = gfx.geom.Ellipsoid(gfx.scene, m4.multiply(m4.translation([0,1.5,0]),m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1]))));
+	var obj2 = gfx.geom.Ellipsoid(gfx.scene, m4.translation([1.5,1,1.5]));
+	
+	var shadow2 = gfx.geom.Disc(gfx.scene, m4.copy([1,0,0,0,0,0,1,0,0,1,0,0,1.5,0,1.5,1]));
+	shadow2.color = [0.5,0.5,0.5,1.0];
+	shadow2.changed();
 
 	input.ondrag2d(0,0);
 	

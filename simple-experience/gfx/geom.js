@@ -7,6 +7,7 @@ var gfxgeom  = {};
 	geom._init = function(gl) {
 		_Circle(gl);
 		_Ellipsoid(gl);
+		_Disc(gl);
 	};
 	
 	var fsBlack = `
@@ -204,17 +205,16 @@ uniform vec3 depth;
 uniform float offset;
 uniform vec3 u;
 uniform vec3 v;
-uniform mat4 world;
-uniform mat4 viewProjection;
+uniform mat4 worldViewProjection;
 
 attribute vec2 cossin;
 
 varying vec4 position;
 
 void main() {
-	position = world * vec4(depth + cossin.x * u + cossin.y * v, 1.);
+	position = vec4(depth + cossin.x * u + cossin.y * v, 1.);
 
-	gl_Position = viewProjection * position + vec4(0,0,offset,0);
+	gl_Position = worldViewProjection * position + vec4(0,0,offset,0);
 }
 `;
 	function _Ellipsoid(gl) {
@@ -235,11 +235,11 @@ void main() {
 			offset: 0,
 			u: v3.create(),
 			v: v3.create(),
-			world: world,
-			viewProjection: scene.viewProjection
+			worldViewProjection: m4.create()
 		};
-
+		
 		function updateWorldView() {
+            uniforms.color = this.color;
 			m4.multiply(scene.view, this.world, worldViewInverse);
 			m4.inverse(worldViewInverse, worldViewInverse);
 			
@@ -266,6 +266,7 @@ void main() {
 		
 		var ellipsoid = {
 			_draw: function(gl) {
+                m4.multiply(scene.viewProjection, this.world, uniforms.worldViewProjection);
 
 				uniforms.offset = 0.0;
 				gl.useProgram(gl.piEllipsoidFlat.program);
@@ -291,4 +292,42 @@ void main() {
 		
 		return ellipsoid;
 	};
+	
+	var vsDisc = `
+uniform mat4 worldViewProjection;
+
+attribute vec2 cossin;
+
+void main() {
+    gl_Position = worldViewProjection * vec4(cossin, 0., 1.);
+}
+`;
+    function _Disc(gl) {
+        gl.piDisc = twgl.createProgramInfo(gl, [vsDisc, fsColor], util.msg);
+    }
+    geom.Disc = function(scene, world) {
+    
+        var uniforms = {
+            color: [0,0,0,1],
+            worldViewProjection: m4.create()
+        };
+        
+        var disc = {
+            _draw: function(gl) {
+                m4.multiply(scene.viewProjection, this.world, uniforms.worldViewProjection);
+                
+                gl.useProgram(gl.piDisc.program);
+                twgl.setBuffersAndAttributes(gl, gl.piDisc, gl.biCosSinStrip);
+                twgl.setUniforms(gl.piDisc, uniforms);
+                twgl.drawBufferInfo(gl, gl.biCosSinStrip, gl.TRIANGLE_STRIP);
+            },
+            world: world,
+            color: uniforms.color,
+            changed: function() {
+                uniforms.color = this.color;
+            },
+        };
+        scene._draw(disc);
+        return disc;
+    };
 })();
