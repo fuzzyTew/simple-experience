@@ -4,44 +4,25 @@ var gfx = {};
 	//----
 	gfx.onframe = function(msDelta, ms) {}
 	//----
-	
-	var m4 = twgl.m4;
-	var v3 = twgl.v3;
-	var gl = twgl.getContext(document.createElement('canvas'));
-	gfxgeom._init(gl);
+		
+	gfx.canvas = document.createElement('canvas');
+	gfx.gl = twgl.getContext(gfx.canvas);
 
-	gl.clearColor(0.9, 0.9, 0.9, 1.0);
-	gl.enable(gl.DEPTH_TEST);
+	gfx.gl.clearColor(0.9, 0.9, 0.9, 1.0);
+	gfx.gl.enable(gfx.gl.DEPTH_TEST);
 	
-	var scene = gfxgeom.Scene(gl, m4.create(), m4.create());
-	
-	gl.canvas.style.position = 'absolute';
-	gl.canvas.style.left = '0';
-	gl.canvas.style.top = '0';
-	gl.canvas.style.width = '100vw';
-	gl.canvas.style.height = '100vh';
-	gl.canvas.style.zIndex = '-1';
+	gfx.canvas.style.position = 'absolute';
+	gfx.canvas.style.left = '0';
+	gfx.canvas.style.top = '0';
+	gfx.canvas.style.width = '100vw';
+	gfx.canvas.style.height = '100vh';
+	gfx.canvas.style.zIndex = '-1';
 	
 	document.body.style.margin = 0;
-	document.body.appendChild(gl.canvas);
-	
-	window.onresize = function() {
-		twgl.resizeCanvasToDisplaySize(gfx.canvas);
-		gl.viewport(0, 0, gfx.canvas.width, gfx.canvas.height);
-
-		m4.perspective(Math.PI / 4, gfx.canvas.clientWidth / gfx.canvas.clientHeight, 0.5, 1024, gfx.scene.projection);
-		gfx.scene.changed();
-	};
-	
-	
-	gfx.canvas = gl.canvas;
-	
-	gfx.scene = scene;
-
-	gfx.geom = gfxgeom;
+	document.body.appendChild(gfx.canvas);
 
 	gfx.draw = function() {
-		scene.draw(gl);
+		gfx.scene.draw(gfx.gl);
 	};
 
 	function render(ms) {
@@ -53,7 +34,6 @@ var gfx = {};
 	}
 
 	gfx.start = function() {
-		window.onresize();
 		gfx.animating = true;
 		gfx.msLastFrame = performance.now();
 		requestAnimationFrame(render);
@@ -62,6 +42,4 @@ var gfx = {};
 	gfx.stop = function() {
 		gfx.animating = false;
 	};
-
-	window.onresize();
 })();
