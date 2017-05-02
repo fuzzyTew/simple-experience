@@ -8,8 +8,12 @@ var gfx = {};
 	gfx.canvas = document.createElement('canvas');
 	gfx.gl = twgl.getContext(gfx.canvas);
 
-	gfx.gl.clearColor(0.9, 0.9, 0.9, 1.0);
-	gfx.gl.enable(gfx.gl.DEPTH_TEST);
+	if (! gfx.gl) {
+		util.msg("ERROR: no webgl");
+	} else {
+		gfx.gl.clearColor(0.9, 0.9, 0.9, 1.0);
+		gfx.gl.enable(gfx.gl.DEPTH_TEST);
+	}
 	
 	gfx.canvas.style.position = 'absolute';
 	gfx.canvas.style.left = '0';
