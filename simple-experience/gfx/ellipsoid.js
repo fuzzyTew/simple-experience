@@ -49,24 +49,71 @@ void main() {
 `;
 ****/
 (function(){
+
 	var vsEllipsoidOutline = `
+precision mediump float;
+
 uniform vec3 depth;
 uniform float offset;
 uniform vec3 u;
 uniform vec3 v;
 uniform mat4 worldViewProjection;
+uniform vec3 cameraModel;
 
 attribute vec2 cossin;
 
-varying vec4 position;
+varying vec3 ray;
 
 void main() {
-	position = vec4(depth + cossin.x * u + cossin.y * v, 1.);
+	vec3 position = depth + cossin.x * u + cossin.y * v;
 
-	gl_Position = worldViewProjection * position + vec4(0,0,offset,0);
+	gl_Position = worldViewProjection * vec4(position, 1.0) + vec4(0,0,offset,0);
+	ray = position - cameraModel;
 }
 `;
+	
+	/****
+	We have camera location and position in space
+	ray = position - camera
+	res dot res = 1
+	res = camera + ray * t
+	    = camera + position t - camera t
+	camera.w^2 + 2 * ray.w camera.w t + ray.w^2 t^2 ... = 1
+	camera . camera - 1 + 2 * (ray . camera) t + (ray . ray) t^2 = 0
+	t = (-b - sqrt(b^2 - 4 a c) / (2 a)
+	  = (-b - 2 * sqrt((b/2)^2 - a c) / (2 a)
+	  = (-(b/2) - sqrt((b/2)^2 - a c) / a
+	
+	we can precalc c
+	****/
+	var fsEllipsoidTest = `
+precision mediump float;
+
+uniform float c;
+uniform mat4 worldViewProjection;
+uniform vec3 cameraModel;
+uniform mat3 worldNormal;
+
+uniform vec3 lightDir;
+uniform vec3 lightColor;
+uniform vec3 ambientColor;
+
+varying vec3 ray;
+
+void main() {
+	float a = dot(ray, ray);
+	float b_2 = dot(ray, cameraModel);
+	float disc = max(0.0, b_2 * b_2 - a * c);
+	float t = (-b_2 - sqrt(disc)) / a;
+	vec3 norm = normalize(worldNormal * (t * ray + cameraModel));
+	float lit = max(0.0, dot(norm, lightDir));
+	
+	gl_FragColor = vec4(ambientColor + lightColor * lit, 1.0);
+}
+`;
+	
 	var piEllipsoidFlat = twgl.createProgramInfo(gfx.gl, [vsEllipsoidOutline, gfx.fs.color], util.msg);
+	var piEllipsoidTest = twgl.createProgramInfo(gfx.gl, [vsEllipsoidOutline, fsEllipsoidTest], util.msg);
 	var piEllipsoidOutline = twgl.createProgramInfo(gfx.gl, [vsEllipsoidOutline, gfx.fs.black], util.msg);
 	
 	var m4 = twgl.m4;
@@ -84,11 +131,18 @@ void main() {
 			depth: v3.create(),
 			u: v3.create(),
 			v: v3.create(),
-			worldViewProjection: m4.create()
+			worldViewProjection: m4.create(),
+			cameraModel: camPos,
+			c: 0,
+			worldNormal: util.m3.identity(),
+			lightDir: [0,1,0],
+			lightColor: [0.5,0.5,0.5],
+			ambientColor: [0.5,0.5,0.5]
 		};
 		
 		function updateWorldView() {
             uniforms.color = this.color;
+			uniforms.world = this.world;
 			m4.multiply(scene.view, this.world, worldViewInverse);
 			m4.inverse(worldViewInverse, worldViewInverse);
 			
@@ -111,6 +165,12 @@ void main() {
 			v3.mulScalar(uniforms.depth, d, uniforms.depth);
 			
 			//console.log('|u| = ' + v3.length(uniforms.u) + ' |v| = ' + v3.length(uniforms.v) + ' |depth| = ' + v3.length(uniforms.depth));
+			
+			uniforms.c = v3.dot(camPos, camPos) - 1.0;
+
+			util.m3.from4(world, uniforms.worldNormal);
+			util.m3.transpose(uniforms.worldNormal, uniforms.worldNormal);
+			util.m3.inverse(uniforms.worldNormal, uniforms.worldNormal);
 		}
 		
 		var ellipsoid = {
@@ -120,15 +180,15 @@ void main() {
 			_getDraws: function(gl) {
                 return [{
                     uniforms: [uniforms, {offset: 0.0}],
-                    programInfo: piEllipsoidFlat,
+                    programInfo: piEllipsoidTest,
                     bufferInfo: gfx.bi.cosSinStrip,
                     type: gfx.gl.TRIANGLE_STRIP
-                }, {
+                }/*, {
                     uniforms: [uniforms, {offset: -1.0 / 1024}],
                     programInfo: piEllipsoidOutline,
                     bufferInfo: gfx.bi.cosSinOutline,
                     type: gfx.gl.LINE_LOOP
-                }];
+                }*/];
 			},
 			color: uniforms.color,
 			world: world,
