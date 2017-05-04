@@ -6,6 +6,18 @@ var util = {
 		p.appendChild(document.createTextNode(msg));
 		document.body.appendChild(p);
 	},
+
+	status: function(status) {
+		
+		var s = document.getElementById('util.status');
+		if (!s) {
+			s = document.createElement('p');
+			s.id = 'util.status';
+			document.body.appendChild(s);
+		}
+
+		s.innerText = status;
+	},
 	
 	range: function(low, high, count, inclusive) {
 	
@@ -174,5 +186,3 @@ window.onerror = function(msg, url, line, col, err) {
 	if (err)
 	   util.msg(err.stack);
 };
-
-util.msg('Loading ...');

@@ -43,6 +43,7 @@ document.body.onload = function() {
 		dragging = false;
 	};
 	gfx.onframe = function(msDelta) {
+		util.status(Math.round(10000 / msDelta) / 10  + ' FPS');
 		if (dragging) {
 			speedY = (radY - lastRadY) / msDelta;
 			lastRadY = radY;
@@ -78,7 +79,7 @@ document.body.onload = function() {
 
 	input.ondrag2d(0,0);
 	
-	util.msg('Loaded.');
+	util.status('Loaded.');
 
 	gfx.start();
 	
