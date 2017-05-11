@@ -119,7 +119,7 @@ void main() {
 	var m4 = twgl.m4;
 	var v3 = twgl.v3;
 		
-	gfx.Ellipsoid = function(scene, world)
+	gfx.Ellipsoid = function(scene, world, shading)
 	{
 		if (!world) world = m4.create();
 		
@@ -177,18 +177,26 @@ void main() {
             _update: function() {
                 m4.multiply(scene.viewProjection, this.world, uniforms.worldViewProjection);                
             },
-			_getDraws: function(gl) {
+            shading: shading,
+			_getDraws: function() {
+				if (this.shading == 'outline')
+					return [{
+						uniforms: [uniforms, {offset: 0.0}],
+                    	programInfo: piEllipsoidFlat,
+                    	bufferInfo: gfx.bi.cosSinStrip,
+                    	type: gfx.gl.TRIANGLE_STRIP
+                    }, {
+                    	uniforms: [uniforms, {offset: -1.0 / 1024}],
+                    	programInfo: piEllipsoidOutline,
+                    	bufferInfo: gfx.bi.cosSinOutline,
+                    	type: gfx.gl.LINE_LOOP
+					}];
                 return [{
-                    uniforms: [uniforms, {offset: 0.0}],
+                	uniforms: [uniforms, {offset: 0.0}],
                     programInfo: piEllipsoidTest,
                     bufferInfo: gfx.bi.cosSinStrip,
                     type: gfx.gl.TRIANGLE_STRIP
-                }/*, {
-                    uniforms: [uniforms, {offset: -1.0 / 1024}],
-                    programInfo: piEllipsoidOutline,
-                    bufferInfo: gfx.bi.cosSinOutline,
-                    type: gfx.gl.LINE_LOOP
-                }*/];
+                }];
 			},
 			color: uniforms.color,
 			world: world,

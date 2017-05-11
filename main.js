@@ -64,7 +64,7 @@ document.body.onload = function() {
 	};
 
 	var obj1 = gfx.Ellipsoid(gfx.scene, m4.multiply(m4.translation([0,1.6,0]),m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1]))));
-	var obj2 = gfx.Ellipsoid(gfx.scene, m4.translation([1.5,1,1.5]));
+	var obj2 = gfx.Ellipsoid(gfx.scene, m4.translation([1.5,1,1.5]), 'outline');
 
 	var m = m4.inverse(obj1.world);
 	var lightDir = v3.copy([0,1,0]);
