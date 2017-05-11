@@ -42,8 +42,18 @@ document.body.onload = function() {
 	input.stopdrag2d = function() {
 		dragging = false;
 	};
+	
+	frameMS = 0;
+	frameCount = 0;
+	
 	gfx.onframe = function(msDelta) {
-		util.status(Math.round(10000 / msDelta) / 10  + ' FPS');
+		frameCount ++;
+		frameMS += msDelta;
+		if (frameMS >= 125) {
+			util.status(Math.round(10000 * frameCount / frameMS) / 10  + ' FPS');
+			frameCount = 0;
+			frameMS = 0;
+		}
 		if (dragging) {
 			speedY = (radY - lastRadY) / msDelta;
 			lastRadY = radY;
