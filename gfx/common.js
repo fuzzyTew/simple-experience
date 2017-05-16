@@ -1,3 +1,6 @@
+gfx.SHADING = util.Enum('DEFAULT', 'OUTLINE', 'NONE');
+gfx.LIGHTING = util.Enum('AMBIENT', 'NONE', 'DIRECTIONAL', 'POINT', 'SPOT');
+
 gfx.fs = {};
 
 gfx.fs.black = `
