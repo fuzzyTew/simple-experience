@@ -1,10 +1,17 @@
 
 (function(){
 	gfx.Plane = function(scene, normal, point, shading) {
+		twgl.v3.normalize(normal, normal);
+		const displacement = twgl.v3.dot(normal, point);
+		const center = twgl.v3.mulScalar(normal, displacement);
 		const plane = {
-			world: twgl.m4.lookAt(point, twgl.v3.add(normal, point), util.v3.perp(normal)),
+			world: twgl.m4.lookAt(center, twgl.v3.add(center, normal), util.v3.perp(normal)),
+			displacement: displacement,
+			normal: normal,
+			center: center,
 			shading: gfx.SHADING.NONE
 		};
+		plane.worldInverse = twgl.m4.inverse(plane.world);
 		return plane; 
 	};
 })();
@@ -12,7 +19,7 @@
 (function(){
 
 	gfx.EllipsoidPlaneShadow = function(scene, ellipsoid, plane, light) {
-		const shadow = gfx.Disc(scene, m4.create());
+		const shadow = gfx.Disc(scene, twgl.m4.create());
 		
 		shadow.ellipsoid = ellipsoid;
 		shadow.plane = plane;
@@ -26,48 +33,85 @@
 		var axis2 = util.m4.axis(shadowMat, 0);
 		var axis3 = util.m4.axis(shadowMat, 1);
 		
-		var scalingMat = twgl.m4.scaling([1,1,0]);
-		
-		const updateDisc = shadow._update();
+		var scalingMat = twgl.m4.scaling([1,0,1]);
+		var pOrientMat = twgl.m4.identity();
+		var pOrientX = util.m4.axis(pOrientMat, 0);
+		var pOrientY = util.m4.axis(pOrientMat, 1);
+		var pOrientZ = util.m4.axis(pOrientMat, 2);
+
+		const updateDisc = shadow._update;
 		shadow._update = function() {
-			updateDisc.call(this);
 		
 			// create shadow in object space
-			twgl.m4.inverse(ellipsoid.world, shadowMat);
-			twgl.m4.transformDirection(shadowMat, this.light.dir, lightDir);
-			twgl.v3.normalize(lightDir);
+			twgl.m4.inverse(this.ellipsoid.world, worldInverse);
+			twgl.m4.transformDirection(worldInverse, this.light.dir, lightDir);
+			twgl.v3.normalize(lightDir, lightDir);
+			
 			
 			twgl.v3.cross(lightDir, axis2, axis3);
+			twgl.v3.normalize(axis3, axis3);
 			twgl.v3.cross(axis3, lightDir, axis2);
 			
-			twgl.m4.multiply(ellipsoid.world, shadowMat, shadowMat);
+			// flatten to plane in world space
+			twgl.m4.multiply(this.ellipsoid.world, shadowMat, this.world);
+			twgl.m4.multiply(scalingMat, this.world, this.world);
+			
+			// TODO: instead project to plane in world space by appropriate scaling and translation
 			
 			
-			// TODO: move code below into here	
+			updateDisc.call(this);
 		};
 		
 		shadow.changed();
+		/*
+		So, the first attempt is all well and good when the light is perpendicular to the ground
+		plane, but fails when it's not.
 		
-		var m = m4.inverse(obj1.world);
-		m4.transformDirection(m, light.dir, lightDir);
+		We're forming the disc the light makes around the object and projecting that
+		disc perpendicularly onto the ground by simply flattening it.
+		For non-peroendicular light, we need to project this elliptical disc properly.
+		Its projection will be another ellipse, and it will be the intersection of an
+		elliptical cylinder and the ground plane.
 		
-		v3.normalize(lightDir, lightDir);
+		One option is to project every single vertex in a vertex shader.
+		An option I've worked with in the past is to project only the extrema of the
+		ellipse.  I haven't verified this produces a correct result.
+		A final way might be to consider the transformation upon the ellipse as the
+		portion of intuitin used to determine that it is indeed an ellipse.
 		
-		var axis2 = v3.cross(lightDir, m4.getAxis(m, 0));
-		v3.normalize(axis2, axis2);
-		var axis3 = v3.cross(lightDir, axis2);
+		Consider this last option, we have the intersection of an elliptical cylinder
+		with a flat plane.  The angle at which the plane is not perpendicular with
+		the cylinder will be the direction and amount in which the cylinder is evenly,
+		linearly scaled in its projection.  This scaling is the only transformation
+		it undergoes (roughly), but it is extreme at extreme angles.
 		
-		m4.identity(m);
-		m4.setAxis(m, axis2, 0, m);
-		m4.setAxis(m, axis3, 1, m);
-		m4.setAxis(m, lightDir, 2, m);
-		m4.multiply(obj1.world, m, m);
-		m4.multiply(m4.scaling([1,0,1]), m, m);
+		We can use geometry to do this.
 		
-		var shadow1 = gfx.Disc(gfx.scene, m);
-		shadow1.color = [0.45,0.45,0.45,1.0]
-		shadow1.changed();
+		Since the scaling is linear, the extrema approach will also work if the extrema
+		taken are those in line with the angle at which the plane is tilted relative to
+		the light.
 		
+		Thinking about it, the scale goes to infinity at 90deg, and goes to 1.0 at 0deg,
+		so it's probably the inverse of the dot product.  The projection is the hypotenuse
+		and the the projectee the adjacent of a right triangle, so that checks out.
+		
+		What direction is this scale in?  The direction of the light, projected on the plane.
+		
+		So we need to construct a transformation matrix that:
+		- moves the ellipsoid to the intersection of the light dir and the plane
+		- adjusts it such that is coplanar
+		- scales it to 1/dot its lenght in direction of the light projected on plane
+		
+		can we consider both these adjustments a scale?  yes - but then 1/dot is not
+		the correct scale.  can we use dotproducts to precalculate the needed orientation
+		matrix?  I believe so; the cross product to acquire the axis will give part.
+		
+		let's try with an orientation matrix.  it seems promising.
+		
+		got distracted by scaling matrix.  Much simpler.  If we scale by zero in direction of
+		plane normal, then we scale by 1/dot^2 in direction of light projected onto plane.
+		*/
+
 		return shadow;
 		
 	};
@@ -137,8 +181,8 @@ document.body.onload = function() {
 			radY += speedY * msDelta;
 			updateCam();
 		}
-		light.dir[0] = Math.cos(ms / 1024.0);
-		light.dir[1] = Math.sin(ms / 1024.0);
+		light.dir[0] = Math.sin(ms / 1024.0);
+		light.dir[1] = -Math.abs(Math.cos(ms / 1024.0));
 		//light.changed();
 	};
 	
@@ -146,11 +190,11 @@ document.body.onload = function() {
 	var ground = gfx.Plane(gfx.scene, [0,1,0], [0,0,0]);
 	
 
-	var obj1 = gfx.Ellipsoid(gfx.scene, m4.multiply(m4.tr7anslation([0,1.6,0]),m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1]))));
+	var obj1 = gfx.Ellipsoid(gfx.scene, m4.multiply(m4.translation([0,1.6,0]),m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1]))));
 	var obj2 = gfx.Ellipsoid(gfx.scene, m4.translation([1.5,1,1.5]), 'outline');
 
 
-	var shadow1 = gfx.EllipsoidPlaneShadow(gfx.scene, gfx.obj1, ground, light);
+	var shadow1 = gfx.EllipsoidPlaneShadow(gfx.scene, obj1, ground, light);
 	
 	var shadow2 = gfx.Disc(gfx.scene, m4.copy([1,0,0,0,0,0,1,0,0,1,0,0,1.5,0,1.5,1]));
 	shadow2.color = [0.45,0.45,0.45,1.0];

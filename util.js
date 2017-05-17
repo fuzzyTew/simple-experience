@@ -268,14 +268,42 @@ var util = {
 			return dst;
 		},
 		axis: function(m, axis) {
-			return new Float32Array(m.buffer, 3 * axis, 3);
+			return new Float32Array(m.buffer, 3 * Float32Array.BYTES_PER_ELEMENT * axis, 3);
 		}
 	},
-	m4: {
-		axis: function(m, axis) {
-			return new Float32Array(m.buffer, 4 * axis, 3);
-		}
-	},
+	m4: (function (){
+	
+		const m4 = {};
+		
+		m4.axis = function(m, axis) {
+			return new Float32Array(m.buffer, 4 * Float32Array.BYTES_PER_ELEMENT * axis, 3);
+		};
+
+		const mTemp = twgl.m4.identity();
+		const xTemp = m4.axis(mTemp, 0);
+		const yTemp = m4.axis(mTemp, 1);
+		const zTemp = m4.axis(mTemp, 2);
+		const mTemp2 = twgl.m4.identity();
+		
+		// axis must be normalized
+		m4.axisScaling = function(axis, scale, dst) {
+			dst = dst || twgl.m4.create();
+			
+			twgl.v3.copy(axis, xTemp);
+			util.v3.perp(xTemp, yTemp);
+			twgl.v3.cross(xTemp, yTemp, zTemp);
+			
+			mTemp2[0] = scale;
+			
+			twgl.m4.multiply(mTemp, scale, dst);
+			twgl.m4.transpose(mTemp, mTemp);
+			twgl.m4.multiply(dst, mTemp, dst);
+			
+			return dst;
+		};
+		
+		return m4;
+	})(),
 	v3: {
 		perp: function(v, dst) {
 			dst = dst || twgl.v3.create();
