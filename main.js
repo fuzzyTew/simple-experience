@@ -24,7 +24,7 @@
 		shadow.ellipsoid = ellipsoid;
 		shadow.plane = plane;
 		shadow.light = light;
-		shadow.color = [0.45, 0.45, 0.45];
+		shadow.color = [0.45, 0.45, 0.45, 1.0];
 		
 		var worldInverse = twgl.m4.create();
 
@@ -33,11 +33,15 @@
 		var axis2 = util.m4.axis(shadowMat, 0);
 		var axis3 = util.m4.axis(shadowMat, 1);
 		
-		var scalingMat = twgl.m4.scaling([1,0,1]);
+		var scalingMat = twgl.m4.scaling([0,1,1]);
 		var pOrientMat = twgl.m4.identity();
 		var pOrientX = util.m4.axis(pOrientMat, 0);
 		var pOrientY = util.m4.axis(pOrientMat, 1);
 		var pOrientZ = util.m4.axis(pOrientMat, 2);
+		var placementMat = twgl.m4.create();
+		
+		window.scalingMat = scalingMat;
+		window.pOrientMat = pOrientMat;
 
 		const updateDisc = shadow._update;
 		shadow._update = function() {
@@ -52,11 +56,27 @@
 			twgl.v3.normalize(axis3, axis3);
 			twgl.v3.cross(axis3, lightDir, axis2);
 			
-			// flatten to plane in world space
+			// transform to world space
 			twgl.m4.multiply(this.ellipsoid.world, shadowMat, this.world);
-			twgl.m4.multiply(scalingMat, this.world, this.world);
+						
+			// flatten to be orthogonal to light
+			twgl.m4.multiply(this.light.projectionMat, this.world, this.world);
 			
-			// TODO: instead project to plane in world space by appropriate scaling and translation
+			// project to plane by appropriate scaling and translation
+			
+			twgl.v3.copy(this.plane.normal, pOrientX);
+			twgl.v3.cross(pOrientX, this.light.dir, pOrientY);
+			twgl.v3.normalize(pOrientY, pOrientY);
+			twgl.v3.cross(pOrientX, pOrientY, pOrientZ);
+			var dot = twgl.v3.dot(this.plane.normal, this.light.dir);
+			scalingMat[10] = 1.0 / (dot * dot);
+			
+			twgl.m4.multiply(pOrientMat, scalingMat, placementMat);
+			twgl.m4.transpose(pOrientMat, pOrientMat);
+			twgl.m4.multiply(placementMat, pOrientMat, placementMat);
+			
+			twgl.m4.multiply(placementMat, this.world, this.world);
+			//*/
 			
 			
 			updateDisc.call(this);
@@ -181,24 +201,31 @@ document.body.onload = function() {
 			radY += speedY * msDelta;
 			updateCam();
 		}
-		light.dir[0] = Math.sin(ms / 1024.0);
-		light.dir[1] = -Math.abs(Math.cos(ms / 1024.0));
-		//light.changed();
+		//ms = -0.45 * Math.PI * 10240.0;
+		//ms = 0;
+		light.dir[0] = Math.sin(ms / 4096.0);
+		light.dir[1] = -0.125;
+		light.dir[2] = Math.cos(ms / 65536.0) * 0.125;
+		//util.status(light.dir);
+		light.changed();
 	};
 	
-	var light = gfx.DirectionalLight(gfx.scene, v3.copy([0, -1, 0]), [1, 1, 1]);
+	var ambient = gfx.AmbientLight(gfx.scene, [0.4, 0.4, 0.4]);
+	var light = gfx.DirectionalLight(gfx.scene, v3.copy([0, -1, 0]), [0.6, 0.6, 0.6]);
 	var ground = gfx.Plane(gfx.scene, [0,1,0], [0,0,0]);
+	window.light = light;
 	
 
-	var obj1 = gfx.Ellipsoid(gfx.scene, m4.multiply(m4.translation([0,1.6,0]),m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1]))));
-	var obj2 = gfx.Ellipsoid(gfx.scene, m4.translation([1.5,1,1.5]), 'outline');
+	var obj1 = gfx.Ellipsoid(gfx.scene, m4.multiply(m4.translation([0,1.6,0]),m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1]))), 'outline');
+	var obj2 = gfx.Ellipsoid(gfx.scene, m4.translation([1.5,1,1.5]));
 
 
 	var shadow1 = gfx.EllipsoidPlaneShadow(gfx.scene, obj1, ground, light);
 	
-	var shadow2 = gfx.Disc(gfx.scene, m4.copy([1,0,0,0,0,0,1,0,0,1,0,0,1.5,0,1.5,1]));
-	shadow2.color = [0.45,0.45,0.45,1.0];
-	shadow2.changed();
+	var obj3 = gfx.Ellipsoid(gfx.scene, m4.multiply(m4.translation([1,1.1,-1.8]),m4.multiply(m4.rotationX(0.7), m4.scaling([0.75,0.25,0.5]))));
+	var shadow3 = gfx.EllipsoidPlaneShadow(gfx.scene, obj3, ground, light);
+	
+	var shadow2 = gfx.EllipsoidPlaneShadow(gfx.scene, obj2, ground, light);
 
 	input.ondrag2d(0,0);
 	

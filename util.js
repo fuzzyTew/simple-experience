@@ -291,11 +291,12 @@ var util = {
 			
 			twgl.v3.copy(axis, xTemp);
 			util.v3.perp(xTemp, yTemp);
+			twgl.v3.normalize(yTemp, yTemp);
 			twgl.v3.cross(xTemp, yTemp, zTemp);
 			
 			mTemp2[0] = scale;
 			
-			twgl.m4.multiply(mTemp, scale, dst);
+			twgl.m4.multiply(mTemp, mTemp2, dst);
 			twgl.m4.transpose(mTemp, mTemp);
 			twgl.m4.multiply(dst, mTemp, dst);
 			
@@ -305,6 +306,7 @@ var util = {
 		return m4;
 	})(),
 	v3: {
+		// result will be shortened! and is not normalized
 		perp: function(v, dst) {
 			dst = dst || twgl.v3.create();
 			

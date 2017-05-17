@@ -106,7 +106,7 @@ void main() {
 	float disc = max(0.0, b_2 * b_2 - a * c);
 	float t = (-b_2 - sqrt(disc)) / a;
 	vec3 norm = normalize(worldNormal * (t * ray + cameraModel));
-	float lit = max(0.0, dot(norm, lightDir));
+	float lit = max(0.0, -dot(norm, lightDir));
 	
 	gl_FragColor = vec4(ambientColor + lightColor * lit, 1.0);
 }
@@ -126,6 +126,8 @@ void main() {
 		var worldViewInverse = m4.create();
 		var camPos = v3.create();
 		
+		for (var light of scene.directionalLights) break;
+		
 		var uniforms = {
 			color: [1,1,1,1],
 			depth: v3.create(),
@@ -135,9 +137,9 @@ void main() {
 			cameraModel: camPos,
 			c: 0,
 			worldNormal: util.m3.identity(),
-			lightDir: [0,1,0],
-			lightColor: [0.5,0.5,0.5],
-			ambientColor: [0.5,0.5,0.5]
+			lightDir: light.dir,
+			lightColor: light.color,
+			ambientColor: scene.ambientLight
 		};
 		
 		function updateWorldView() {

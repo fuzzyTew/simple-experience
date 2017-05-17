@@ -8,6 +8,7 @@ gfx.Scene = function(camera, projection)
 	var draws = [];
 	var movingObjects = new Set();
 	var turningObjects = new Set();
+	var ambientLights = new Set();
 	
 	var m4 = twgl.m4;
 	var gl = gfx.gl;
@@ -22,6 +23,8 @@ gfx.Scene = function(camera, projection)
 		camera: camera,
 		view: view,
 		viewProjection: m4.multiply(projection, view),
+		ambientLight: twgl.v3.create(),
+		directionalLights: new Set(),
 		turned: function() {
 			this.changed();
 			for (let object of turningObjects)
@@ -38,6 +41,10 @@ gfx.Scene = function(camera, projection)
 		},
 		draw: function() {
 			gl.clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT);
+			
+			this.ambientLight[0] = this.ambientLight[1] = this.ambientLight[2] = 0.0;
+			for (let light of ambientLights)
+				twgl.v3.add(light.color, this.ambientLight, this.ambientLight);
 
 			for (let object of objects)
 				object._update();
@@ -52,7 +59,13 @@ gfx.Scene = function(camera, projection)
 			objects.add(object);
 			for (let draw of object._getDraws(gl))
 				draws.push(draw);
-		}
+		},
+		_light: function(light) {
+			if (light.type == gfx.LIGHTING.AMBIENT)
+				ambientLights.add(light);
+			else if (light.type == gfx.LIGHTING.DIRECTIONAL)
+				this.directionalLights.add(light);
+		},
 	};
 };
 gfx.scene = gfx.Scene();
