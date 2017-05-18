@@ -18,7 +18,7 @@
 
 (function(){
 
-	gfx.EllipsoidPlaneShadow = function(scene, ellipsoid, plane, light) {
+	gfx.EllipsoidPlaneDirectionalShadow = function(scene, ellipsoid, plane, light) {
 		const shadow = gfx.Disc(scene, twgl.m4.create());
 		
 		shadow.ellipsoid = ellipsoid;
@@ -220,12 +220,12 @@ document.body.onload = function() {
 	var obj2 = gfx.Ellipsoid(gfx.scene, m4.translation([1.5,1,1.5]));
 
 
-	var shadow1 = gfx.EllipsoidPlaneShadow(gfx.scene, obj1, ground, light);
+	var shadow1 = gfx.EllipsoidPlaneDirectionalShadow(gfx.scene, obj1, ground, light);
 	
 	var obj3 = gfx.Ellipsoid(gfx.scene, m4.multiply(m4.translation([1,1.1,-1.8]),m4.multiply(m4.rotationX(0.7), m4.scaling([0.75,0.25,0.5]))));
-	var shadow3 = gfx.EllipsoidPlaneShadow(gfx.scene, obj3, ground, light);
+	var shadow3 = gfx.EllipsoidPlaneDirectionalShadow(gfx.scene, obj3, ground, light);
 	
-	var shadow2 = gfx.EllipsoidPlaneShadow(gfx.scene, obj2, ground, light);
+	var shadow2 = gfx.EllipsoidPlaneDirectionalShadow(gfx.scene, obj2, ground, light);
 
 	input.ondrag2d(0,0);
 	
