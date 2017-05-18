@@ -58,14 +58,14 @@ uniform float offset;
 uniform vec3 u;
 uniform vec3 v;
 uniform mat4 worldViewProjection;
-uniform vec3 cameraModel;
+uniform highp vec3 cameraModel;
 
 attribute vec2 cossin;
 
-varying vec3 ray;
+varying highp vec3 ray;
 
 void main() {
-	vec3 position = depth + cossin.x * u + cossin.y * v;
+	highp vec3 position = depth + cossin.x * u + cossin.y * v;
 
 	gl_Position = worldViewProjection * vec4(position, 1.0) + vec4(0,0,offset,0);
 	ray = position - cameraModel;
@@ -91,14 +91,14 @@ precision mediump float;
 
 uniform float c;
 uniform mat4 worldViewProjection;
-uniform vec3 cameraModel;
+uniform highp vec3 cameraModel;
 uniform mat3 worldNormal;
 
 uniform vec3 lightDir;
 uniform vec3 lightColor;
 uniform vec3 ambientColor;
 
-varying vec3 ray;
+varying highp vec3 ray;
 
 void main() {
 	float a = dot(ray, ray);
