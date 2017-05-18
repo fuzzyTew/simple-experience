@@ -204,8 +204,8 @@ document.body.onload = function() {
 		//ms = -0.45 * Math.PI * 10240.0;
 		//ms = 0;
 		light.dir[0] = Math.sin(ms / 4096.0);
-		light.dir[1] = -0.125;
-		light.dir[2] = Math.cos(ms / 65536.0) * 0.125;
+		light.dir[1] = -0.5;
+		light.dir[2] = Math.cos(ms / 32768.0) * 0.5;
 		//util.status(light.dir);
 		light.changed();
 	};
