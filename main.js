@@ -2,11 +2,11 @@
 (function(){
 	gfx.Plane = function(scene, normal, point, shading) {
 		twgl.v3.normalize(normal, normal);
-		const displacement = twgl.v3.dot(normal, point);
-		const center = twgl.v3.mulScalar(normal, displacement);
+		const distance = twgl.v3.dot(normal, point);
+		const center = twgl.v3.mulScalar(normal, distance);
 		const plane = {
 			world: twgl.m4.lookAt(center, twgl.v3.add(center, normal), util.v3.perp(normal)),
-			displacement: displacement,
+			distance: distance,
 			normal: normal,
 			center: center,
 			shading: gfx.SHADING.NONE
@@ -75,6 +75,10 @@
 			twgl.m4.transpose(pOrientMat, pOrientMat);
 			twgl.m4.multiply(placementMat, pOrientMat, placementMat);
 			
+			twgl.m4.multiply(placementMat, this.world, this.world);
+			
+			twgl.v3.mulScalar(this.light.dir, this.plane.distance / dot, lightDir);
+			twgl.m4.translation(lightDir, placementMat);
 			twgl.m4.multiply(placementMat, this.world, this.world);
 			//*/
 			
