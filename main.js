@@ -215,6 +215,37 @@ document.body.onload = function() {
 	var ground = gfx.Plane(gfx.scene, [0,1,0], [0,0,0]);
 	window.light = light;
 	
+	var beziertri = {
+		aa: v3.copy([ 0,  1, -1]),
+		ab: v3.copy([-1,  0,  0]), ac: v3.copy([0.5, 1.5,  0]),
+		bb: v3.copy([-1,  2,  1]), bc: v3.copy([0, 1,  1]), cc: v3.copy([1,  1,  1]),
+		point: function(s, t, u, dst) {
+			dst = dst || v3.create();
+			var p = [this.aa, this.ab, this.bb, this.bc, this.cc, this.ac];
+			// 	aa s^2 + 2 ab s t + bb t^2 + 2 ac s u + 2 bc t u + cc u^2
+			const ss = s*s, st = 2*s*t, tt = t*t, tu = 2*t*u, uu = u*u, su = 2*s*u;
+			dst[0] = p[0][0]*ss + p[1][0]*st + p[2][0]*tt + p[3][0]*tu + p[4][0]*uu + p[5][0]*su;
+			dst[1] = p[0][1]*ss + p[1][1]*st + p[2][1]*tt + p[3][1]*tu + p[4][1]*uu + p[5][1]*su;
+			dst[2] = p[0][2]*ss + p[1][2]*st + p[2][2]*tt + p[3][2]*tu + p[4][2]*uu + p[5][2]*su;
+			return dst;
+		}
+	};
+	let ct = 12.0;
+	let surfscale = v3.divScalar([1.0,1.0,1.0], ct);
+	var surfsph = [];
+	for (let si = 0; si <= ct; ++ si) {
+		let row = [];
+		surfsph[si] = row;
+		let s = si / ct;
+		for (let ti = 0; ti <= ct - si; ++ ti) {
+			let t = ti / ct;
+			let u = (ct - si - ti) / ct;
+			let mat = m4.translation(beziertri.point(s, t, u));
+			m4.scale(mat, surfscale, mat);
+			row[ti] = gfx.Ellipsoid(gfx.scene, mat, 'outline');
+		}
+	}
+	/* 
 
 	var obj1 = gfx.Ellipsoid(gfx.scene, m4.multiply(m4.translation([0,1.6,0]),m4.multiply(m4.rotationZ(0.8), m4.scaling([2,1,1]))), 'outline');
 	var obj2 = gfx.Ellipsoid(gfx.scene, m4.translation([1.5,1,1.5]));
@@ -227,6 +258,7 @@ document.body.onload = function() {
 	
 	var shadow2 = gfx.EllipsoidPlaneDirectionalShadow(gfx.scene, obj2, ground, light);
 
+	*/
 	input.ondrag2d(0,0);
 	
 	util.status('Loaded.');
