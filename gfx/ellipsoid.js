@@ -179,9 +179,9 @@ void main() {
             _update: function() {
                 m4.multiply(scene.viewProjection, this.world, uniforms.worldViewProjection);                
             },
-            shading: shading,
+            shading: gfx.SHADING.get(shading),
 			_getDraws: function() {
-				if (this.shading == 'outline')
+				if (this.shading === gfx.SHADING.OUTLINE)
 					return [{
 						uniforms: [uniforms, {offset: 0.0}],
                     	programInfo: piEllipsoidFlat,

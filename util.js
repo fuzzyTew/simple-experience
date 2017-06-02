@@ -46,15 +46,16 @@ var util = {
 		for (let e of enums) {
 			ret[e.toUpperCase()] = { name: e.toLowerCase() };
 		}
-		ret.get = function(type) {
-			for (let e of ret) {
+		Object.defineProperty(ret, 'get', {value: function(type) {
+			for (let e in this) {
+				e = this[e];
 				if (e === type)
 					return e;
 				if (e.name == type)
 					return e;
 			}
-			return ret[enums[0].toUpperCase()];
-		};
+			return this[enums[0].toUpperCase()];
+		}});
 		return ret;
 	},
 
