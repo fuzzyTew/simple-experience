@@ -10,13 +10,13 @@ var input = {};
 
 
 	var registerX, registerY;
-	var clicking, down = false;
+	var clicking, isDown = false;
 
 	function down(x, y) {
 		registerX = x;
 		registerY = y;
 		clicking = true;
-		down = true;
+		isDown = true;
 	}
 
 	function move(x, y) {
@@ -30,7 +30,7 @@ var input = {};
 	}
 
 	function up(x, y) {
-		down = false;
+		isDown = false;
 		if (clicking) {
 			input.onclick2d(registerX, registerY);
 		} else {
@@ -43,7 +43,7 @@ var input = {};
 	});
 
 	window.addEventListener('mousemove', function(e) {
-		if (!down) return;
+		if (!isDown) return;
 
 		e.preventDefault();
 		e.stopPropagation();
